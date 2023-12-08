@@ -34,12 +34,16 @@ if __name__ == "__main__":
         lower = 0.5 * (t - discriminant)
         upper = 0.5 * (t + discriminant)
 
+
         # if either the lower or upper is exactly zero on the integer
         #  we have to bump it up one since it doesn't techincally break the record!
+        # Ok, part 2 numbers are so big that isclose is failing and incorrectly shrinking the interval.
+        #  So we will have to test it another way.  
         lower_i = np.ceil(lower)
-        if np.isclose(lower, lower_i): lower_i = lower_i + 1
+        if np.isclose(lower, lower_i, rtol=1e-10): lower_i = lower_i + 1
         upper_i = np.floor(upper)
-        if np.isclose(upper, upper_i): upper_i = upper_i - 1
+        if np.isclose(upper, upper_i, rtol=1e-10): upper_i = upper_i - 1
+
         size = upper_i - lower_i + 1
         print(f"t={t} d={d} discriminant={discriminant} lower={lower} upper={upper} loweri={lower_i} upper_i={upper_i} size={size}")
         results *=size 
