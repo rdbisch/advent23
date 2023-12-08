@@ -9,6 +9,46 @@ def mapRangeLookup(alist, ex):
             return _to + (ex - _from)
     return ex
 
+# If provided a key of the form (x, _, len) which corresponds to multiple keys x, x+1, ..., x + len
+#  returns an exhaustive but perhaps disjoint set of output ranges:
+# [(y1, x, len1), (y2, x + len1, len2), .. ]
+# where len1 + len2 + ... = len
+def mapRangesLookup(alist, ex, _keylength):
+    print(f"mapRangesLookup alist={alist} ex={ex} _keylength={_keylength}")
+    partial_results = []
+    for _to, _from, _len in alist:
+        # Here, ex is not a point, but an interval (ex, ex + keylength)
+        #  our ultimate goal is to map this onto a new interval via the function defined in alist.
+        # That function is piece series of intervals for which its mapping is valid.  
+        # There are three cases to consider
+        # The first is that ex is entirely contained within the interal [from, from + len].  Trivial.
+        # The second is that ex is partially contained within the interval [from, from + len], thereby creating the need to splinter the interval. Hard.
+        # The third is that ex is not in the interval, in which case we just move along to the next. Trivial.
+
+        # So the second case then:
+        #     Case 2.a:         ex == from < ex + keylength < from + len
+        #  (Note our preconditions should make the case ex < from impossible.)
+        #      So this is actually case 1.  Trivial.
+
+        #     Case 2.b:         from < ex < from + keylength < ex + keylength
+        #         create subset:   ex => (ex[0:L], , L), (ex[L:], , keylength - L)
+        #                               case 1             Then we pretend that ex = ex[L:] with keylength -= L for the rest of the algorithm.  
+        #                                                  we can do this because alist is also in sorted order by the interval!
+
+        if (ex >= _from and ex < _from + _len):
+            # (ex, _keylength) (_from, _len) (_to, _len)
+            before_ex_len = ex - _from
+                   # size of ex    # size of the subdivision (from, len) into (from, before_ex_len) + (from + before_ex_len, remaining)
+            L = min( _keylength, _len - before_ex_len)
+            partial_results.append((_to + before_ex_len, ex, L))
+            ex = ex + L
+            _keylength -= L
+    
+    if _keylength > 0:
+        partial_results.append((ex, ex, _keylength))
+
+    return partial_results
+
 if __name__ == "__main__":
 
     state = 0
@@ -75,18 +115,25 @@ if __name__ == "__main__":
 
     lowest = None
     lowest_seed = None
-    for seed in seeds:
-        x = int(seed)
-        print(f"processing {x}")
+    for i, seed in enumerate(seeds):
+        if (i % 2) == 1: continue
+        length = int(seeds[i + 1])
+        x = [(int(seed), None, length)]
+        #print(f"processing {x} ")
         for map in ["seed-to-soil", "soil-to-fertilizer", "fertilizer-to-water", "water-to-light", "light-to-temperature", "temperature-to-humidity", "humidity-to-location"]:            
             #y = final_maps[map].get(x, x)  # default to x=>x if the key doesn't exist
-            y = mapRangeLookup(final_maps[map], x)
-            print(f"map {map} {x} => {y}")
-            x = y
-
-        if lowest is None or x < lowest:
-            lowest = x
-            lowest_seed = seed
+            #y = mapRangeLookup(final_maps[map], x)
+            results = []
+            for r in x:
+                y = mapRangesLookup(final_maps[map], r[0], r[2])
+                #print(f"map {map} {r} => {y}")
+                results = results + y            
+            x = results
+        #print(x)
+        for i, (_to, _from, _len) in enumerate(results):
+            if lowest is None or _to < lowest:
+                lowest = _to
+                lowest_seed = seed
 
     print(f"{lowest} {lowest_seed}")
 
