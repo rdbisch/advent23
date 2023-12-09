@@ -2,7 +2,6 @@ import sys
 import numpy as np
 
 def differences(vec):
-    print(vec)
     n = len(vec)
     if n > 0:
         return vec[1:n] - vec[0:(n-1)]
@@ -31,12 +30,34 @@ def projectArrays(arrays):
         arrays[next] = ret
     return arrays[0][-1]
 
+def projectArrays_s2(arrays):
+    new_arrays = []
+
+    ######### 5 10 13 16 21 30
+    #         5 3  3  5  9
+    #        -2 0 2 4 6
+    #         2 2 2 2 2 
+    #         0 0 0 0 0
+
+    #         x0 0 0 0 0 0    st. x = 0 since i = 0
+    #         x1 2 2 2 2 2 2  st. (2 - x1) = x0 => x1 = 2 - x0
+    #         x2 -2 0 2 4 6   st. (-2 - x2) = x1 => x2 = -2 - x1
+    #
+    for i, ar in enumerate(reversed(arrays)):
+        na = np.pad(ar, (1, 0))
+        if  i == 0: na[0] = 0
+        else: na[0] = ar[0] - new_arrays[-1][0]
+
+        new_arrays.append(na)
+    print(new_arrays)
+    return new_arrays[-1][0]
+
 if __name__ == "__main__":
     s = 0
     for line in sys.stdin:
         digits = np.array(line.strip().split(' '), dtype='int64')
-        print(digits)
-        x = projectArrays(applyDifferences(digits))
+        print(applyDifferences(digits))
+        x = projectArrays_s2(applyDifferences(digits))
         print(f"digits={digits} => {x}")
         s += x 
 
