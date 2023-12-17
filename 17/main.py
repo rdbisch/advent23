@@ -25,12 +25,12 @@ def makeMoves2(grid, point):
         elif point[0] == 1 and d in ('N', 'S'): continue
 
         cost = 0
-        for spaces in range(1, 4):
+        for spaces in range(1, 11):
             pt = extend((point[1], point[2]), d, spaces)
             if inbounds(pt, np.zeros(grid.shape[1:])): # hackery
                 p = (q, pt[0], pt[1])
                 cost += grid[p]
-                moves.append({"from": point, "to": p, "cost": cost})
+                if spaces >= 4: moves.append({"from": point, "to": p, "cost": cost})
     return moves
 
 def makeMoves(grid, point, lastMove = None):  #todo lastmove
@@ -133,12 +133,16 @@ def djikstra2(grid, source, target):
         # Get the lowest cost univisted node
         #  (cost < 0 ==> infinity)
         indices = np.where( np.logical_and(unvisited > 0, cost >= 0 ) )
-        #print(f"indices is {len(indices)} elements long")
-        #print(indices)
+
+        if len(indices[0]) == 0:
+            # There are unvisited nodes but they are unreachable
+            break
+ 
         # give me the index of the lowest cost
         #   square on the grid that we have not yet visited.
         next_t = np.where( cost[indices] == min(cost[indices]) )
         next = indices[0][ next_t[0][0] ], indices[1][ next_t[0][0] ], indices[2][ next_t[0][0] ]
+        assert(unvisited[next] > 0)
         current_cost = cost[next]
 
         #print(f"Working on {next} with current cost {current_cost}")
