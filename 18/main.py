@@ -16,6 +16,7 @@ def onestep(index, dir):
     off = { 'R': (0, 1), 'L': (0, -1), 'U': (-1, 0), 'D': (1, 0) }[dir]
     return (y + off[0], x + off[1]) 
 
+# Part 1
 # Reads the dig plan into a numpy array
 def importDigPlan(digplan):
     maxy = None
@@ -53,6 +54,30 @@ def importDigPlan(digplan):
             start = onestep(start, dir)
     return grid
 
+
+# Part 2
+# Reads the dig plan into a list of verticies
+def importDigPlan2(digplan):
+    maxy = None
+    maxx = None
+    minx = None
+    miny = None
+    x = 0
+    y = 0
+    points = []
+    for dir, steps, color in digplan:
+        points.append((y, x))
+        if dir == 'R': x += steps
+        if dir == 'L': x -= steps
+        if dir == 'U': y -= steps
+        if dir == 'D': y += steps
+
+        if minx is None or (x < minx): minx = x
+        if miny is None or (y < miny): miny = y
+        if maxx is None or (x > maxx): maxx = x
+        if maxy is None or (y > maxy): maxy = y
+    return points
+
 def padAndFlood(grid):
     biggrid = np.pad(grid, (1, 1), 'constant', constant_values = ' ')
     start_index = (0, 0)
@@ -71,6 +96,26 @@ def padAndFlood(grid):
                 visit.add(new_index)
     return biggrid
 
+# actually building the grid is impossible for part 2
+#  without more RAM and a motherboard from the year 20240
+# So I will try to use Shoelace formula instead.
+# https://en.wikipedia.org/wiki/Shoelace_formula
+def shoelaceIt(points):
+    area = 0
+    perimeter = 0
+
+    for i, p in enumerate(points):
+        if (i + 1) == len(points): j = 0
+        else: j = i  + 1
+        next = points[j]
+        sub = p[1]*next[0] - next[1]*p[0]
+        print(f"p = {p} next = {next} sub = {sub}")
+        area += p[1]*next[0] - next[1]*p[0]
+        perimeter += np.abs((p[1] - next[1]) + (p[0] - next[0]))
+
+    print(f"after shoelace perimeter is {perimeter}")
+    return (area / 2) + (perimeter / 2) + 1
+
 if __name__ == "__main__":
     digplan = []
     for line in sys.stdin:
@@ -79,11 +124,14 @@ if __name__ == "__main__":
         dir = parts[0]
         steps = int(parts[1])
         color = parts[2]
+        # 012
+        # (#0a7ad2)
+        steps = int(parts[2][2:7], 16)
+        dir = {0:'R',1:'D',2:'L',3:'U'}[int(parts[2][-2])]
         digplan.append((dir, steps, color))
-
-    grid = importDigPlan(digplan)
+    print(digplan)
+    grid = importDigPlan2(digplan)
     print(grid)
 
-    biggrid = padAndFlood(grid)
-    printGrid(biggrid)
-    print(np.sum(biggrid == '#') + np.sum(biggrid == ' '))
+    biggrid = shoelaceIt(grid)
+    print(biggrid)
